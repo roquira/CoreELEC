@@ -1,0 +1,144 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "*-roquira.*"
+  workflow_dispatch:
+    inputs:
+      clean_build:
+        description: Clean the build tree before compiling
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: coreelec-amlogic-no-build
+  cancel-in-progress: false
+
+env:
+  PROJECT: Amlogic-ce
+  ARCH: aarch64
+  DEVICE: Amlogic-no
+
+jobs:
+  verify:
+    name: Verify source
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    outputs:
+      image_name: ${{ steps.release.outputs.image_name }}
+      prerelease: ${{ steps.release.outputs.prerelease }}
+    steps:
+      - name: Check out CoreELEC
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Check release tag
+        id: release
+        if: github.ref_type == 'tag'
+        run: .github/scripts/release-info.sh "$GITHUB_REF_NAME" >>"$GITHUB_OUTPUT"
+
+      - name: Check Kodi source
+        run: |
+          if [[ "$GITHUB_REF_TYPE" == tag ]]; then
+            .github/scripts/check-kodi-source.sh "$GITHUB_REF_NAME"
+          else
+            .github/scripts/check-kodi-source.sh
+          fi
+
+  build:
+    name: Build image
+    needs: verify
+    runs-on: [self-hosted, linux, x64, coreelec-builder]
+    timeout-minutes: 720
+    steps:
+      - name: Check out CoreELEC
+        uses: actions/checkout@v7
+        with:
+          clean: false
+          persist-credentials: false
+
+      - name: Check build dependencies
+        run: ./scripts/checkdeps
+
+      - name: Clean build tree
+        if: github.ref_type == 'tag' || inputs.clean_build
+        run: make clean
+
+      - name: Build image
+        env:
+          CUSTOM_IMAGE_NAME: ${{ needs.verify.outputs.image_name }}
+        run: |
+          set -o pipefail
+          make image 2>&1 | tee build.log
+
+      - name: Collect assets
+        run: .github/scripts/collect-release-assets.sh build.log assets
+
+      - name: Upload assets
+        uses: actions/upload-artifact@v7
+        with:
+          name: coreelec-amlogic-no-${{ github.run_id }}
+          path: assets/
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
+
+  release:
+    name: Publish release
+    if: github.ref_type == 'tag'
+    needs: [verify, build]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: Check out CoreELEC
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 20
+          persist-credentials: false
+
+      - name: Download assets
+        uses: actions/download-artifact@v8
+        with:
+          name: coreelec-amlogic-no-${{ github.run_id }}
+          path: assets
+
+      - name: List Kodi changes in release notes
+        run: |
+          .github/scripts/kodi-changes.sh >kodi-changes.md
+          awk 'FNR == NR { changes = changes $0 "\n"; next }
+               $0 == "<!-- kodi-changes -->" { printf "%s", changes; next }
+               { print }' kodi-changes.md assets/release-notes.md >release-notes.md
+          mv release-notes.md assets/release-notes.md
+
+      - name: Attest images
+        uses: actions/attest@v4
+        with:
+          subject-path: |
+            assets/*.img.gz
+            assets/*.tar
+
+      - name: Assemble draft release
+        env:
+          PRERELEASE: ${{ needs.verify.outputs.prerelease }}
+        run: |
+          mapfile -t files < <(find assets -maxdepth 1 -type f ! -name release-notes.md | sort)
+          args=(--draft --verify-tag --title "$GITHUB_REF_NAME" --notes-file assets/release-notes.md)
+          if [[ "$PRERELEASE" == true ]]; then
+            args+=(--prerelease --latest=false)
+          fi
+          gh release create "$GITHUB_REF_NAME" "${files[@]}" "${args[@]}"
+
+      - name: Publish release
+        run: gh release edit "$GITHUB_REF_NAME" --draft=false

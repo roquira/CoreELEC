@@ -1,0 +1,32 @@
+name: Check
+
+on:
+  push:
+    branches:
+      - "**"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Scripts and Kodi source
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out CoreELEC
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Lint scripts
+        run: shellcheck .github/scripts/*.sh
+
+      - name: Check Kodi source
+        run: .github/scripts/check-kodi-source.sh
