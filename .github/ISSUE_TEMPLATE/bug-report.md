@@ -1,36 +1,42 @@
 ---
-name: Bug Report
-about: Describe this issue
-title: "[BUG]"
-labels: ISSUE NEEDS REVIEW
+name: Bug report
+about: Report something in this build that is not working correctly
+title: ''
+labels: bug
 assignees: ''
 
 ---
 
-<!-- Before making a bug report please visit https//forum.libreelec.tv where -->
-<!-- a large community exists to help and support you. -->
+## Description
 
-<!-- Opening a bug report without triaging the issue in the forum first will -->
-<!-- probably result in the report being closed, with an instruction to visit -->
-<!-- the forum for support. -->
+Describe what happened and what you expected to happen.
 
-### Describe the bug
-<!-- A clear description of what the bug is. -->
+## Steps to reproduce
 
-### How to reproduce
-Steps to reproduce the behavior:
-1. Go to '...'
-2. Play '....'
-3. See error
+1.
+2.
+3.
 
-### Information
- - LibreELEC Version: [e.g. 12.0.2]
- - Hardware Platform: [e.g. RPi4]
- - Forum Thread: [URL]
+## Environment
 
-### Log file
-<!-- Add debug log files (https://libreelec.wiki/how_to/provide_logfile) that we can search for errors. -->
+- Release:
+- Device:
+- Installed as: fresh image / update from
+- Media type (local, network share, PVR, Blu-ray folder, …):
 
-### Context
-<!-- Add any context about the problem here. -->
+## Official build
 
+Does the problem also occur on an official CoreELEC build?
+
+- [ ] Yes
+- [ ] No
+- [ ] Not tested
+
+## Logs and screenshots
+
+Enable debug logging, reproduce the problem, and attach `kodi.log` or a paste
+link from CoreELEC's log upload. Add screenshots where relevant.
+
+## Additional context
+
+Add anything else that may help identify the problem.
