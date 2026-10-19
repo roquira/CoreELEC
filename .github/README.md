@@ -4,8 +4,6 @@
 
 My personal [CoreELEC](https://coreelec.org) 22 build for a Xiaomi TV Box S (3rd Gen), with custom [Kodi fixes and features](https://github.com/roquira/xbmc/commits/piers/customizations).
 
-Not affiliated with or supported by CoreELEC or Team Kodi. Report [issues here](https://github.com/roquira/CoreELEC/issues); report upstream only if they also occur on an official build.
-
 ## Installation
 
 Download from [Releases](https://github.com/roquira/CoreELEC/releases), which lists the changes in each build. Back up Kodi userdata first: this build upgrades the video database to a schema official builds don't recognize.
@@ -25,7 +23,7 @@ PROJECT=Amlogic-ce ARCH=aarch64 DEVICE=Amlogic-no make image
 
 See [MAINTAINING.md](MAINTAINING.md) for releases and rebasing.
 
-## Credits and license
+## License & Acknowledgements
 
 Based on [CoreELEC](https://github.com/CoreELEC/CoreELEC), [LibreELEC](https://github.com/LibreELEC/LibreELEC.tv) and [Kodi](https://github.com/xbmc/xbmc).
 
